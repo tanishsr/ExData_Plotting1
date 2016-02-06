@@ -6,8 +6,19 @@
 #Load library
 library(data.table)
 library(dplyr)
+library(sqldf)
 
 ## Collect the data project and read the subset
+## 2 solutions are implemented for reading the dataset.
+## Solution 1: Read and Subset the data
+## In this solution data is read first using fread function, as it takes less time to read large data set, and then using subset function required date data is extracted
+##
+## Solution 2: Read the subset using sqldf
+## In this solution, sqldf package is used to read the subset of data. If sqldf package is not installed, then comment out the solution 2 section below and library(sqldf), and uncomment the solution 1 section below.
+##
+## Once the subset of data is read, then it is saved in subset_data.txt file so that entire data set is not read again and again to plot other graphs. 
+## Note: This script will download the project data set zip. This step can be skipped by keeping the downloaded zip into the 'data' folder in the current working directory
+
 ## If "data" folder is not there in the current woring directory, then create it. 
 if(!file.exists("data")){
 	## Data directory doesn't exist, creating the directory
@@ -26,11 +37,20 @@ if(file.exists("./data/subset_data.txt")){
 		unzip("./data/exdata_data_household_power_consumption.zip", exdir="./data/")
 	}
 	
-	powerdata <- fread("./data/household_power_consumption.txt", na.strings="?")
-	powerdata$Date <- as.Date(powerdata$Date, format = "%d/%m/%Y")
-	subsetdata <- subset(powerdata, Date >= as.Date("2007-02-01") & Date <= as.Date("2007-02-02"))
-	rm(powerdata)
-	subsetdata <- mutate(subsetdata, datetime = as.POSIXct(paste(subsetdata$Date, subsetdata$Time), format = "%Y-%m-%d %H:%M:%S"))
+	## Solution 1
+	#powerdata <- fread("./data/household_power_consumption.txt", na.strings="?")
+	#powerdata$Date <- as.Date(powerdata$Date, format = "%d/%m/%Y")
+	#subsetdata <- subset(powerdata, Date >= as.Date("2007-02-01") & Date <= as.Date("2007-02-02"))
+	#rm(powerdata)
+	## End of Solution 1
+	
+	
+	## Solution 2
+	datafile <- file("./data/household_power_consumption.txt")
+	subsetdata <- sqldf("select * from datafile where Date in ('1/2/2007','2/2/2007')", dbname = tempfile(), file.format = list(header = T, row.names = F, sep =";"))
+	## End of Solution 2
+	
+	subsetdata <- mutate(subsetdata, datetime = as.POSIXct(paste(subsetdata$Date, subsetdata$Time), format = "%d/%m/%Y %H:%M:%S"))
 	write.table(subsetdata, "./data/subset_data.txt", row.names=FALSE, sep = ";")
 }
 
